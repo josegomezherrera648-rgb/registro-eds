@@ -1,0 +1,226 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#17365d">
+<title>Registro Fotográfico EDS V5</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;font-family:Arial,sans-serif;background:#f3f5f7;color:#222}
+header{position:sticky;top:0;z-index:10;background:#17365d;color:#fff;padding:14px}
+header h1{font-size:19px;margin:0 0 3px}
+header small{opacity:.9}
+main{max-width:760px;margin:auto;padding:10px 12px 40px}
+.card{background:#fff;border-radius:14px;padding:15px;margin:11px 0;box-shadow:0 2px 9px #0001}
+h2{font-size:17px;margin:0 0 10px}
+label{display:block;font-weight:bold;margin:10px 0 5px}
+input,textarea{width:100%;padding:11px;border:1px solid #c5cbd1;border-radius:9px;font-size:16px}
+button{border:0;border-radius:9px;padding:11px 13px;font-size:15px;font-weight:bold}
+.primary{background:#17365d;color:#fff}
+.secondary{background:#e8edf2;color:#17365d}
+.photo-actions{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+.photo-actions button{width:100%}
+.status{display:grid;grid-template-columns:repeat(4,1fr);gap:5px}
+.status button{padding:10px 5px}
+.selected{outline:3px solid #222}
+.preview{display:none;width:100%;max-height:390px;object-fit:contain;margin-top:9px;border-radius:9px;background:#eee}
+.progress{height:7px;background:#dfe4e8;border-radius:8px;overflow:hidden;margin-top:8px}
+.progress div{height:100%;width:0;background:#fff}
+.hidden{display:none}
+.notice{padding:10px;border-radius:8px;margin-top:8px}
+.ok{background:#e9f6ea}
+.warn{background:#fff4df}
+.unit{border:1px solid #d8dde2;border-radius:10px;padding:10px;margin-top:10px;background:#fafafa}
+@media(max-width:480px){
+ .photo-actions{grid-template-columns:1fr}
+ .status{grid-template-columns:repeat(2,1fr)}
+}
+</style>
+</head>
+<body>
+<header>
+<h1>Registro Fotográfico EDS</h1>
+<small>Prototipo móvil V5 · 29 ítems · abrir en Safari/Chrome</small>
+<div class="progress"><div id="bar"></div></div>
+</header>
+
+<main>
+<section class="card">
+<h2>Datos de la inspección</h2>
+<label>EDS</label>
+<input id="eds" value="GRAN WIPAMA">
+<label>Inspector</label>
+<input id="inspector">
+<label>Dirección</label>
+<input id="direccion">
+<label>Fecha y hora</label>
+<input id="fecha" type="datetime-local">
+</section>
+
+<section class="card">
+<h2>Elementos repetibles</h2>
+<small>Por ahora se usan para identificar unidades. La generación automática por cantidad la incorporaremos en la siguiente etapa.</small>
+<label>Surtidores</label>
+<input id="surtidores" type="number" min="1" value="1">
+<label>Tanques</label>
+<input id="tanques" type="number" min="0" value="1">
+<label>Pozos de monitoreo</label>
+<input id="pozos" type="number" min="0" value="1">
+<label>Extintores</label>
+<input id="extintores" type="number" min="0" value="1">
+</section>
+
+<div id="items"></div>
+
+<section class="card">
+<h2>Revisión</h2>
+<button class="primary" onclick="review()">Revisar inspección</button>
+<div id="review"></div>
+</section>
+</main>
+
+<script>
+const items = [
+["1","Panorámica de la EDS y sus diferentes zonas (1 b)"],
+["2","TABLERO ELECTRICO"],
+["3","Instalación sanitaria para el público (1 c)"],
+["4","Instalación sanitaria para empleados (1 c)"],
+["5","Zona almacenamiento temporal RESPEL (1 f)"],
+["6","Aviso de precios en cada entrada, dentro del predio y coincide con surtidores (5 a)"],
+["7","Exhibición marca del mayorista, canopy, surtidores, aviso precios (5 b)"],
+["8","EDS Colinda con alguna vía (5c)"],
+["9","Protecciones mecánicas de islas (1 a)"],
+["10","Válvula de impacto de surtidores y su anclaje (1 b), Conexión puesta a tierra de surtidores (1 c), Caja contenedora de surtidores (1 i), Ausencia de fugas en equipos y accesorios"],
+["11","Pistolas (1 e) Válvulas Swivel (1 g)"],
+["12","Válvulas break away (1 f)"],
+["13","Indicación de precio, volumen y tipo de producto (1 j)"],
+["14","Cubierta o canopy (2 a) Canalización de aguas de cubierta por medio de tuberías (2 b)"],
+["15","Avisos de seguridad del área de almacenamiento (2 c)"],
+["16","Avisos de seguridad del área de abastecimiento (2 d)"],
+["17","Numeración e identificación de tanques (3 c)"],
+["18","Ductos de respiración de los tanques (3 e)"],
+["19","Contenedor de derrames de cada tanque (1 g ii), Acople de decarga (1 f ii), Valvula de drenaje, Tapones impermeables (1 f iii)"],
+["20","Caja contenedora de bombas sumergibles (5.3.1 h), Parte superior de los tanques"],
+["21","Pozos de monitoreo (1 k)"],
+["22","Ubicación de tanques bajo ninguna edificación (1 k)"],
+["23","Punto de conexión a tierra para proceso de descargue"],
+["24","Existencia extintores: Dos extintores por Isla, dos en oficina admin, uno por área adicional (5 a) / SURTIDORES / Oficina / Adicional"],
+["25","Parada de emergencia (5 d)"],
+["26","Sistema de pretratamiento de aguas industriales (1 a) (trampa grasas)"],
+["27","Impermeabilidad de pisos de la EDS (1 b)"],
+["28","Canal de aguas hidrocarburadas (1 d y e)"],
+["29","ABASTECIMIENTO DENTRO DEL CANAL PERIMETRAL"]
+];
+
+const state=items.map(()=>({photos:[],status:"",obs:"",unit:""}));
+
+function localNow(){
+ const d=new Date();
+ d.setMinutes(d.getMinutes()-d.getTimezoneOffset());
+ return d.toISOString().slice(0,16);
+}
+document.getElementById("fecha").value=localNow();
+
+function render(){
+ const box=document.getElementById("items");
+ box.innerHTML="";
+ items.forEach((item,i)=>{
+  box.insertAdjacentHTML("beforeend",`
+  <section class="card" id="item${i}">
+   <h2>${item[0]}. ${item[1]}</h2>
+   <label>Unidad / identificación</label>
+   <input placeholder="Ej.: Surtidor 1, Tanque 2, Pozo 1..." oninput="state[${i}].unit=this.value">
+   <label>Fotografías</label>
+   <div class="photo-actions">
+    <button class="primary" type="button" onclick="camera(${i})">📷 Tomar foto</button>
+    <button class="secondary" type="button" onclick="file(${i})">📁 Seleccionar archivo</button>
+   </div>
+   <input id="cam${i}" class="hidden" type="file" accept="image/*" capture="environment" onchange="addPhoto(event,${i})">
+   <input id="fil${i}" class="hidden" type="file" accept="image/*" multiple onchange="addPhoto(event,${i})">
+   <div id="photos${i}"></div>
+   <label>Estado</label>
+   <div class="status">
+    <button type="button" onclick="status(${i},'C',this)">C</button>
+    <button type="button" onclick="status(${i},'NC',this)">NC</button>
+    <button type="button" onclick="status(${i},'NA',this)">NA</button>
+    <button type="button" onclick="status(${i},'NV',this)">NV</button>
+   </div>
+   <label>Observación</label>
+   <textarea rows="3" placeholder="Escriba aquí la observación..." oninput="state[${i}].obs=this.value"></textarea>
+  </section>`);
+ });
+ update();
+}
+
+function camera(i){document.getElementById("cam"+i).click()}
+function file(i){document.getElementById("fil"+i).click()}
+
+function addPhoto(e,i){
+ [...(e.target.files||[])].forEach(f=>{
+  if(!f.type.startsWith("image/"))return;
+  const url=URL.createObjectURL(f);
+  state[i].photos.push(url);
+ });
+ e.target.value="";
+ renderPhotos(i);
+ update();
+}
+
+function renderPhotos(i){
+ const box=document.getElementById("photos"+i);
+ box.innerHTML="";
+ state[i].photos.forEach((url,n)=>{
+  box.insertAdjacentHTML("beforeend",
+   `<div class="unit">
+    <b>Foto ${n+1}</b>
+    <img class="preview" style="display:block" src="${url}">
+    <button type="button" class="secondary" onclick="removePhoto(${i},${n})">Eliminar foto</button>
+   </div>`);
+ });
+}
+
+function removePhoto(i,n){
+ state[i].photos.splice(n,1);
+ renderPhotos(i);
+ update();
+}
+
+function status(i,v,b){
+ state[i].status=v;
+ b.parentElement.querySelectorAll("button").forEach(x=>x.classList.remove("selected"));
+ b.classList.add("selected");
+ update();
+}
+
+function update(){
+ let done=state.filter(x=>x.photos.length&&x.status).length;
+ document.getElementById("bar").style.width=(done/items.length*100)+"%";
+}
+
+function review(){
+ let p=[],s=[];
+ state.forEach((x,i)=>{
+  if(!x.photos.length)p.push(items[i][0]);
+  if(!x.status)s.push(items[i][0]);
+ });
+ let h="";
+ if(!p.length&&!s.length){
+  h='<div class="notice ok">✅ Los 29 ítems tienen fotografía y estado.</div>';
+ }else{
+  if(p.length)h+=`<div class="notice warn">⚠️ Falta fotografía: ${p.join(", ")}.</div>`;
+  if(s.length)h+=`<div class="notice warn">⚠️ Falta estado: ${s.join(", ")}.</div>`;
+ }
+ h+='<button type="button" class="secondary" style="margin-top:8px" onclick="firstPending()">Ir al primer pendiente</button>';
+ document.getElementById("review").innerHTML=h;
+}
+
+function firstPending(){
+ const i=state.findIndex(x=>!x.photos.length||!x.status);
+ if(i>=0)document.getElementById("item"+i).scrollIntoView({behavior:"smooth",block:"start"});
+}
+
+render();
+</script>
+</body>
+</html>
